@@ -120,7 +120,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getWalkingRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
     this.routingService.getWalkingRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        this.showRouteOnMap(routeData, 'green', 'Ruta a pie', this.walkingRouteLayer);
+        const distance = routeData.features[0]?.properties?.summary?.distance || 0;
+        const duration = routeData.features[0]?.properties?.summary?.duration || 0;
+        const popupText = `Ruta a pie<br>Distancia: ${distance.toFixed(2)} m<br>Duración: ${duration.toFixed(0)} s`;
+        this.showRouteOnMap(routeData, 'green', popupText, this.walkingRouteLayer);
         this.showRouteWalking = true;
       });
   }
@@ -128,7 +131,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getCarRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
     this.routingService.getCarRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        this.showRouteOnMap(routeData, 'blue', 'Ruta en coche', this.carRouteLayer);
+        const distance = routeData.features[0]?.properties?.summary?.distance || 0;
+        const duration = routeData.features[0]?.properties?.summary?.duration || 0;
+        const popupText = `Ruta en coche<br>Distancia: ${distance.toFixed(2)} m<br>Duración: ${duration.toFixed(0)} s`;
+        this.showRouteOnMap(routeData, 'blue', popupText, this.carRouteLayer);
         this.showRouteCar = true;
       });
   }
@@ -136,7 +142,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getBikeRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
     this.routingService.getBikeRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        this.showRouteOnMap(routeData, 'purple', 'Ruta en bicicleta', this.bikeRouteLayer);
+        const distance = routeData.features[0]?.properties?.summary?.distance || 0;
+        const duration = routeData.features[0]?.properties?.summary?.duration || 0;
+        const popupText = `Ruta en bicicleta<br>Distancia: ${distance.toFixed(2)} m<br>Duración: ${duration.toFixed(0)} s`;
+        this.showRouteOnMap(routeData, 'purple', popupText, this.bikeRouteLayer);
         this.showRouteBike = true;
       });
   }
@@ -157,19 +166,19 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
           }).filter(coord => coord !== null) as L.LatLngExpression[];
 
           if (latlngs.length > 0) {
-            // Create a new polyline or update the existing one
-            if (layer) {
-              layer.setLatLngs(latlngs); // Update the existing layer
-            } else {
-              const polyline = L.polyline(latlngs, { color: color }).bindPopup(popupText);
-              polyline.addTo(this.map);
-               if (color === 'green') {
-                this.walkingRouteLayer = polyline;
-              } else if (color === 'blue') {
-                this.carRouteLayer = polyline;
-              } else if (color === 'purple') {
-                this.bikeRouteLayer = polyline;
-              }
+            // Create a new polyline
+            const polyline = L.polyline(latlngs, { color: color }).bindPopup(popupText);
+
+            // Add the polyline to the map
+            polyline.addTo(this.map);
+
+            // Store the polyline in the appropriate layer variable.
+            if (color === 'green') {
+              this.walkingRouteLayer = polyline;
+            } else if (color === 'blue') {
+              this.carRouteLayer = polyline;
+            } else if (color === 'purple') {
+              this.bikeRouteLayer = polyline;
             }
           } else {
             console.warn(`No valid coordinates to draw route (${popupText})`);
