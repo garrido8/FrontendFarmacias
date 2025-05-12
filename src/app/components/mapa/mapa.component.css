@@ -2,3 +2,23 @@
   width: 100%;
   height: 400px; /* Ajusta la altura según tus necesidades */
 }
+
+.buttons button {
+  padding: 10px 20px;
+  font-size: 1em;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff; /* Un azul primario */
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* Transición suave para el hover */
+}
+
+.buttons button:hover {
+  background-color: #0056b3; /* Un azul más oscuro al pasar el ratón */
+}
+
+.buttons button:focus {
+  outline: none; /* Evita el contorno predeterminado del navegador */
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5); /* Añade un contorno personalizado al enfocar */
+}
