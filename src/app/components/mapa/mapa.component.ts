@@ -120,11 +120,11 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
 private showRouteOnMap(routeData: RouteResponse): void {
   if (this.map && routeData.features && routeData.features.length > 0) {
-    console.log('routeData:', routeData);
+    // console.log('routeData:', routeData);
     const geometry = routeData.features[0].geometry;
     if (geometry && geometry.coordinates && geometry.coordinates.length > 0) {
       const coordinates = geometry.coordinates; // Accede directamente al array de coordenadas
-      console.log('coordinates:', coordinates);
+      // console.log('coordinates:', coordinates);
       if (Array.isArray(coordinates)) {
         const latlngs = coordinates.map(coord => {
           if (Array.isArray(coord) && coord.length === 2 && typeof coord[0] === 'number' && typeof coord[1] === 'number') {
