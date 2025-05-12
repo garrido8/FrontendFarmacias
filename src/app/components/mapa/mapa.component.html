@@ -1,11 +1,39 @@
 <div class="content">
-  <div id="map" style="width: 800px; height: 500px;"></div>
+  <div class="routes-info">
+    @if ( showRoute ) {
+      <h3>Rutas a la farmacia:</h3>
+      @if( showRouteWalking && walkingRouteLayer ) {
+        <div class="route walk" (click)="focusWalkingRoute()">
+          Ruta a pie
+        </div>
+      }
 
-  <div class="buttons">
-    <button
-      (click)="buscarFarmaciaMasCercana()"
-    >
-      Buscar farmacia más cercana
-    </button>
+      @if( showRouteCar && carRouteLayer ) {
+        <div class="route car" (click)="focusCarRoute()">
+          Ruta en coche
+        </div>
+      }
+
+      @if( showRouteBike && bikeRouteLayer ) {
+        <div class="route bike" (click)="focusBikeRoute()">
+          Ruta en bicicleta
+        </div>
+      }
+    }
+  </div>
+  <div id="map"></div>
+
+  <div class="controls">
+    <div class="buttons">
+      <button (click)="buscarFarmaciaMasCercana()">
+        Buscar farmacia más cercana
+      </button>
+
+      <button>
+        Buscar las 3 farmacias más cercanas
+      </button>
+    </div>
+    <div class="legend">
+      </div>
   </div>
 </div>
