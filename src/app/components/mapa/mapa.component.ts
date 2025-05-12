@@ -15,8 +15,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   private userMarker: L.Marker | undefined;
   private userLocation: { latitude: number; longitude: number } | undefined;
   private farmaciasService = inject(FarmaciasService);
-  private routingService = inject( RutasService ); // Inyecta el servicio de enrutamiento
-  private routeLayer: L.Polyline | undefined;
+  private routingService = inject(RutasService); // Inyecta el servicio de enrutamiento
+  private walkingRouteLayer: L.Polyline | undefined;
+  private carRouteLayer: L.Polyline | undefined;
+  private bikeRouteLayer: L.Polyline | undefined;
 
   constructor() { }
 
@@ -29,6 +31,9 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.map) {
+      if (this.walkingRouteLayer) this.map.removeLayer(this.walkingRouteLayer);
+      if (this.carRouteLayer) this.map.removeLayer(this.carRouteLayer);
+      if (this.bikeRouteLayer) this.map.removeLayer(this.bikeRouteLayer);
       this.map.remove();
     }
   }
@@ -87,75 +92,84 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public buscarFarmaciaMasCercana(): void {
-    if (this.userLocation) {
+    if (this.userLocation && this.map) {
       this.farmaciasService.getFarmaciaMasCercana(this.userLocation.latitude, this.userLocation.longitude)
         .subscribe((cercana) => {
-          if (this.map) {
-            this.map.setView([cercana.farmacia.geo_lat, cercana.farmacia.geo_long], 16);
+          this.map!.setView([cercana.farmacia.geo_lat, cercana.farmacia.geo_long], 16);
 
-            const blueIcon = L.icon({
-              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-              shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
-              iconSize: [25, 41],
-              iconAnchor: [12, 41],
-              popupAnchor: [1, -34],
-              shadowSize: [41, 41]
-            });
-            L.marker([cercana.farmacia.geo_lat, cercana.farmacia.geo_long], { icon: blueIcon }).addTo(this.map!)
-              .bindPopup(cercana.farmacia.schema_name);
+          const blueIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          });
+          L.marker([cercana.farmacia.geo_lat, cercana.farmacia.geo_long], { icon: blueIcon }).addTo(this.map!)
+            .bindPopup(cercana.farmacia.schema_name);
 
-            // Obtener y mostrar la ruta
-            this.routingService.getWalkingRoute(
-              this.userLocation!.latitude,
-              this.userLocation!.longitude,
-              cercana.farmacia.geo_lat,
-              cercana.farmacia.geo_long
-            ).subscribe(routeData => {
-              this.showRouteOnMap(routeData);
+          const startLat = this.userLocation!.latitude;
+          const startLng = this.userLocation!.longitude;
+          const endLat = cercana.farmacia.geo_lat;
+          const endLng = cercana.farmacia.geo_long;
+
+          // Obtener y mostrar la ruta a pie
+          this.routingService.getWalkingRoute(startLat, startLng, endLat, endLng)
+            .subscribe(routeData => {
+              this.showRouteOnMap(routeData, 'green', 'Ruta a pie');
             });
-          }
+
+          // Obtener y mostrar la ruta en coche
+          this.routingService.getCarRoute(startLat, startLng, endLat, endLng)
+            .subscribe(routeData => {
+              this.showRouteOnMap(routeData, 'blue', 'Ruta en coche');
+            });
+
+          // Obtener y mostrar la ruta en bicicleta
+          this.routingService.getBikeRoute(startLat, startLng, endLat, endLng)
+            .subscribe(routeData => {
+              this.showRouteOnMap(routeData, 'purple', 'Ruta en bicicleta');
+            });
         });
     }
   }
 
-private showRouteOnMap(routeData: RouteResponse): void {
-  if (this.map && routeData.features && routeData.features.length > 0) {
-    // console.log('routeData:', routeData);
-    const geometry = routeData.features[0].geometry;
-    if (geometry && geometry.coordinates && geometry.coordinates.length > 0) {
-      const coordinates = geometry.coordinates; // Accede directamente al array de coordenadas
-      // console.log('coordinates:', coordinates);
-      if (Array.isArray(coordinates)) {
-        const latlngs = coordinates.map(coord => {
-          if (Array.isArray(coord) && coord.length === 2 && typeof coord[0] === 'number' && typeof coord[1] === 'number') {
-            return [coord[1], coord[0]] as L.LatLngExpression;
+  private showRouteOnMap(routeData: RouteResponse, color: string, popupText: string): void {
+    if (this.map && routeData.features && routeData.features.length > 0) {
+      const geometry = routeData.features[0].geometry;
+      if (geometry && geometry.coordinates && geometry.coordinates.length > 0) {
+        const coordinates = geometry.coordinates;
+        if (Array.isArray(coordinates)) {
+          const latlngs = coordinates.map(coord => {
+            if (Array.isArray(coord) && coord.length === 2 && typeof coord[0] === 'number' && typeof coord[1] === 'number') {
+              return [coord[1], coord[0]] as L.LatLngExpression;
+            } else {
+              console.warn('Coordenada inválida:', coord);
+              return null;
+            }
+          }).filter(coord => coord !== null) as L.LatLngExpression[]; // Filtrar coordenadas inválidas
+
+          if (latlngs.length > 0) {
+            const polylineLayer = L.polyline(latlngs, { color: color });
+            polylineLayer.bindPopup(popupText).openPopup();
+
+            if (color === 'green') this.walkingRouteLayer = polylineLayer;
+            if (color === 'blue') this.carRouteLayer = polylineLayer;
+            if (color === 'purple') this.bikeRouteLayer = polylineLayer;
+
+            polylineLayer.addTo(this.map);
+            this.map.fitBounds(polylineLayer.getBounds(), { padding: [50, 50] }); // Ajustar bounds para la última ruta
           } else {
-            console.warn('Coordenada inválida:', coord);
-            return null;
+            console.warn(`No hay coordenadas válidas para dibujar la ruta (${popupText}).`);
           }
-        }).filter(coord => coord !== null) as L.LatLngExpression[]; // Filtrar coordenadas inválidas
-
-        if (latlngs.length > 0) {
-          const polylineLayer = L.polyline(latlngs, { color: 'green' });
-
-          if (this.routeLayer) {
-            this.map.removeLayer(this.routeLayer);
-          }
-          polylineLayer.addTo(this.map);
-          this.routeLayer = polylineLayer;
-
-          this.map.fitBounds(polylineLayer.getBounds());
         } else {
-          console.warn('No hay coordenadas válidas para dibujar la polilínea.');
+          console.warn(`Formato de coordenadas inesperado (${popupText}).`);
         }
       } else {
-        console.warn('Formato de coordenadas inesperado.');
+        console.warn(`No hay información de coordenadas en la respuesta (${popupText}).`);
       }
     } else {
-      console.warn('No hay información de coordenadas en la respuesta.');
+      console.warn(`No hay características de ruta en la respuesta (${popupText}).`);
     }
-  } else {
-    console.warn('No hay características de ruta en la respuesta.');
   }
-}
 }
