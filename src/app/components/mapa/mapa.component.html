@@ -1,27 +1,32 @@
 <div class="content">
-  <div class="routes-info">
-    @if ( showRoute ) {
-      <h3>Rutas a la farmacia:</h3>
-      @if( showRouteWalking && walkingRouteLayer ) {
-        <div class="route walk" (click)="focusWalkingRoute()">
-          Ruta a pie
-        </div>
-      }
+  <div class="top-part">
+    <div id="map">
 
-      @if( showRouteCar && carRouteLayer ) {
-        <div class="route car" (click)="focusCarRoute()">
-          Ruta en coche
-        </div>
-      }
+      <!-- <div class="routes-info">
+        @if ( showRoute ) {
+          @if( showRouteWalking && walkingRouteLayer ) {
+            <div class="route walk" (click)="checkClick( $event )">
+              Ruta a pie
+            </div>
+          }
 
-      @if( showRouteBike && bikeRouteLayer ) {
-        <div class="route bike" (click)="focusBikeRoute()">
-          Ruta en bicicleta
-        </div>
-      }
-    }
+          @if( showRouteCar && carRouteLayer ) {
+            <div class="route car" (click)="focusCarRoute()">
+              Ruta en coche
+            </div>
+          }
+
+          @if( showRouteBike && bikeRouteLayer ) {
+            <div class="route bike" (click)="focusBikeRoute()">
+              Ruta en bicicleta
+            </div>
+          }
+        }
+      </div> -->
+
+    </div>
   </div>
-  <div id="map"></div>
+
 
   <div class="controls">
     <div class="buttons">

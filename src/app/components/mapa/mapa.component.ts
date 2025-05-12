@@ -15,31 +15,25 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   private userMarker: L.Marker | undefined;
   private userLocation: { latitude: number; longitude: number } | undefined;
   private farmaciasService = inject(FarmaciasService);
-  private routingService = inject(RutasService); // Inyecta el servicio de enrutamiento
+  private routingService = inject(RutasService);
   public walkingRouteLayer: L.Polyline | undefined;
   public carRouteLayer: L.Polyline | undefined;
   public bikeRouteLayer: L.Polyline | undefined;
-  private farmaciaMarker: L.Marker | undefined; // Para el marcador de la farmacia
-  public showRoute: boolean = false; // Bandera para mostrar la sección de rutas
-  public showRouteCar: boolean = false; // Bandera para mostrar la información de la ruta en coche
-  public showRouteBike: boolean = false; // Bandera para mostrar la información de la ruta en bicicleta
-  public showRouteWalking: boolean = false; // Bandera para mostrar la información de la ruta a pie
+  private farmaciaMarker: L.Marker | undefined;
+  public showRoute: boolean = false;
+  public showRouteCar: boolean = false;
+  public showRouteBike: boolean = false;
+  public showRouteWalking: boolean = false;
 
   constructor() { }
 
   ngOnInit(): void {
   }
 
-  /**
-   * Inicializa el mapa después de que la vista del componente esté completamente inicializada.
-   */
   ngAfterViewInit(): void {
     this.initMap();
   }
 
-  /**
-   * Limpia las capas y remueve el mapa al destruir el componente.
-   */
   ngOnDestroy(): void {
     if (this.map) {
       this.clearRouteLayers();
@@ -48,9 +42,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Inicializa el mapa de Leaflet con una vista centrada y añade la capa de tiles.
-   */
   private initMap(): void {
     this.map = L.map('map').setView([39.47, -6.37], 13);
 
@@ -63,9 +54,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     this.getLocation();
   }
 
-  /**
-   * Obtiene la ubicación del usuario utilizando la API de geolocalización del navegador.
-   */
   private getLocation(): void {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -85,11 +73,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Centra el mapa en la ubicación del usuario y añade un marcador.
-   * @param latitude La latitud de la ubicación del usuario.
-   * @param longitude La longitud de la ubicación del usuario.
-   */
   private centerMapOnUser(latitude: number, longitude: number): void {
     const redIcon = L.icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -112,9 +95,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Busca la farmacia más cercana a la ubicación del usuario y solicita las rutas.
-   */
   public buscarFarmaciaMasCercana(): void {
     if (this.userLocation && this.map) {
       this.farmaciasService.getFarmaciaMasCercana(this.userLocation.latitude, this.userLocation.longitude)
@@ -122,7 +102,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
           this.map!.setView([cercana.farmacia.geo_lat, cercana.farmacia.geo_long], 16);
           this.addFarmaciaMarker(cercana.farmacia.geo_lat, cercana.farmacia.geo_long, cercana.farmacia.schema_name);
           this.clearRouteLayers();
-          this.showRoute = true; // Mostrar la sección de rutas
+          this.showRoute = true;
 
           const startLat = this.userLocation!.latitude;
           const startLng = this.userLocation!.longitude;
@@ -136,13 +116,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Obtiene y muestra la ruta a pie entre dos puntos.
-   * @param startLat La latitud del punto de inicio.
-   * @param startLng La longitud del punto de inicio.
-   * @param endLat La latitud del punto de destino.
-   * @param endLng La longitud del punto de destino.
-   */
+
   public getWalkingRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
     this.routingService.getWalkingRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
@@ -151,13 +125,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  /**
-   * Obtiene y muestra la ruta en coche entre dos puntos.
-   * @param startLat La latitud del punto de inicio.
-   * @param startLng La longitud del punto de inicio.
-   * @param endLat La latitud del punto de destino.
-   * @param endLng La longitud del punto de destino.
-   */
   public getCarRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
     this.routingService.getCarRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
@@ -166,13 +133,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  /**
-   * Obtiene y muestra la ruta en bicicleta entre dos puntos.
-   * @param startLat La latitud del punto de inicio.
-   * @param startLng La longitud del punto de inicio.
-   * @param endLat La latitud del punto de destino.
-   * @param endLng La longitud del punto de destino.
-   */
   public getBikeRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
     this.routingService.getBikeRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
@@ -181,13 +141,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  /**
-   * Muestra la ruta en el mapa creando una polilínea y añadiéndola a la capa correspondiente.
-   * @param routeData Los datos de la ruta obtenidos del servicio.
-   * @param color El color de la polilínea.
-   * @param popupText El texto para el popup de la polilínea.
-   * @param layer La capa de la polilínea a actualizar.
-   */
   private showRouteOnMap(routeData: RouteResponse, color: string, popupText: string, layer: L.Polyline | undefined): void {
     if (this.map && routeData.features && routeData.features.length > 0) {
       const geometry = routeData.features[0].geometry;
@@ -201,74 +154,56 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
               console.warn(`Coordenada inválida (${popupText}):`, coord);
               return null;
             }
-          }).filter(coord => coord !== null) as L.LatLngExpression[]; // Filtrar coordenadas inválidas
+          }).filter(coord => coord !== null) as L.LatLngExpression[];
 
           if (latlngs.length > 0) {
-            const polylineLayer = L.polyline(latlngs, { color: color }).bindPopup(popupText);
-
+            // Create a new polyline or update the existing one
             if (layer) {
-              this.map.removeLayer(layer); // Remover la capa anterior si existe
+              layer.setLatLngs(latlngs); // Update the existing layer
+            } else {
+              const polyline = L.polyline(latlngs, { color: color }).bindPopup(popupText);
+              polyline.addTo(this.map);
+               if (color === 'green') {
+                this.walkingRouteLayer = polyline;
+              } else if (color === 'blue') {
+                this.carRouteLayer = polyline;
+              } else if (color === 'purple') {
+                this.bikeRouteLayer = polyline;
+              }
             }
-
-            polylineLayer.addTo(this.map);
-
-            if (color === 'green') this.walkingRouteLayer = polylineLayer;
-            if (color === 'blue') this.carRouteLayer = polylineLayer;
-            if (color === 'purple') this.bikeRouteLayer = polylineLayer;
-
-            // No ajustar el centro aquí, se hará al hacer clic en el texto de la ruta
           } else {
-            console.warn(`No hay coordenadas válidas para dibujar la ruta (${popupText}).`);
+            console.warn(`No valid coordinates to draw route (${popupText})`);
           }
         } else {
-          console.warn(`Formato de coordenadas inesperado (${popupText}).`);
+          console.warn(`Unexpected coordinate format (${popupText})`);
         }
       } else {
-        console.warn(`No hay información de coordenadas en la respuesta (${popupText}).`);
+        console.warn(`No coordinate information in response (${popupText})`);
       }
     } else {
-      console.warn(`No hay características de ruta en la respuesta (${popupText}).`);
+      console.warn(`No route features in response (${popupText})`);
     }
   }
 
-  /**
-   * Centra el mapa en una capa y abre su popup, ajustando los límites con un padding.
-   * @param layer La capa de Leaflet (Polyline) a centrar.
-   */
-  private centerOnRoute(layer: L.Polyline | undefined): void {
-    if (this.map && layer) {
-      this.map.fitBounds(layer.getBounds(), { padding: [80, 80] }); // Ajusta el padding aquí
-      layer.openPopup();
-    }
-  }
-
-  /**
-   * Centra el mapa en la ruta a pie.
-   */
   public focusWalkingRoute(): void {
     this.centerOnRoute(this.walkingRouteLayer);
   }
 
-  /**
-   * Centra el mapa en la ruta en coche.
-   */
   public focusCarRoute(): void {
     this.centerOnRoute(this.carRouteLayer);
   }
 
-  /**
-   * Centra el mapa en la ruta en bicicleta.
-   */
   public focusBikeRoute(): void {
     this.centerOnRoute(this.bikeRouteLayer);
   }
 
-  /**
-   * Añade un marcador para la farmacia en el mapa.
-   * @param lat La latitud de la farmacia.
-   * @param lng La longitud de la farmacia.
-   * @param name El nombre de la farmacia para el popup.
-   */
+  private centerOnRoute(layer: L.Polyline | undefined): void {
+    if (this.map && layer) {
+      this.map.fitBounds(layer.getBounds(), { padding: [80, 80] });
+      layer.openPopup();
+    }
+  }
+
   private addFarmaciaMarker(lat: number, lng: number, name: string): void {
     const blueIcon = L.icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
@@ -284,10 +219,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     this.farmaciaMarker = L.marker([lat, lng], { icon: blueIcon }).addTo(this.map!).bindPopup(name);
   }
 
-  /**
-   * Limpia todas las capas de ruta del mapa.
-   */
-  public clearRouteLayers(): void {
+  private clearRouteLayers(): void {
     if (this.map) {
       if (this.walkingRouteLayer) this.map.removeLayer(this.walkingRouteLayer);
       if (this.carRouteLayer) this.map.removeLayer(this.carRouteLayer);
@@ -295,6 +227,14 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       this.walkingRouteLayer = undefined;
       this.carRouteLayer = undefined;
       this.bikeRouteLayer = undefined;
+    }
+  }
+
+  public checkClick( event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    console.log(target);
+    if( target.classList.contains( 'walk' ) ) {
+      this.focusWalkingRoute();
     }
   }
 }

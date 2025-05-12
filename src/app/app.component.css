@@ -28,7 +28,6 @@
   width: 100%;
   max-width: 1200px; /* Limita el ancho del contenido en pantallas grandes */
   margin-bottom: 30px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Una sombra suave para destacar el contenido */
   border-radius: 8px; /* Bordes redondeados */
   overflow: hidden; /* Asegura que el contenido de <app-mapa> se ajuste a los bordes */
   animation: fadeIn 0.5s ease-in 0.2s forwards; /* Animación de aparición con un pequeño retraso */
