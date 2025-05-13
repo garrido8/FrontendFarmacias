@@ -24,6 +24,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public showRouteCar: boolean = false;
   public showRouteBike: boolean = false;
   public showRouteWalking: boolean = false;
+  private farmaciaMarkers: L.Marker[] = [];
+
 
   constructor() { }
 
@@ -37,7 +39,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.map) {
       this.clearRouteLayers();
-      if (this.farmaciaMarker) this.map.removeLayer(this.farmaciaMarker);
+      this.farmaciaMarkers.forEach(marker => this.map?.removeLayer(marker));
       this.map.remove();
     }
   }
@@ -95,13 +97,43 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  public buscarTresFarmacias(): void {
+    if (this.userLocation && this.map) {
+      this.farmaciasService.getFarmaciasMasCercanas(this.userLocation.latitude, this.userLocation.longitude)
+        .subscribe((farmacias) => {
+          this.clearRouteLayers();
+          this.farmaciaMarkers.forEach(marker => this.map?.removeLayer(marker));
+          this.farmaciaMarkers = [];
+          farmacias.forEach((cercana, index) => {
+            // Add a marker for each pharmacy
+            const marker = this.addFarmaciaMarker(cercana.geo_lat, cercana.geo_long, cercana.schema_name, true);
+            this.farmaciaMarkers.push(marker);
+
+            // Calculate and display route to each pharmacy
+            const startLat = this.userLocation!.latitude;
+            const startLng = this.userLocation!.longitude;
+            const endLat = cercana.geo_lat;
+            const endLng = cercana.geo_long;
+
+            this.getWalkingRoute(startLat, startLng, endLat, endLng, index);
+            this.getCarRoute(startLat, startLng, endLat, endLng, index);
+            this.getBikeRoute(startLat, startLng, endLat, endLng, index);
+          });
+          this.map!.setView([this.userLocation!.latitude, this.userLocation!.longitude], 16);
+        });
+    }
+  }
+
   public buscarFarmaciaMasCercana(): void {
     if (this.userLocation && this.map) {
       this.farmaciasService.getFarmaciaMasCercana(this.userLocation.latitude, this.userLocation.longitude)
         .subscribe((cercana) => {
+          console.log(cercana);
           this.map!.setView([cercana.farmacia.geo_lat, cercana.farmacia.geo_long], 16);
-          this.addFarmaciaMarker(cercana.farmacia.geo_lat, cercana.farmacia.geo_long, cercana.farmacia.schema_name);
           this.clearRouteLayers();
+          this.farmaciaMarkers.forEach(marker => this.map?.removeLayer(marker));
+          this.farmaciaMarkers = [];
+          this.addFarmaciaMarker(cercana.farmacia.geo_lat, cercana.farmacia.geo_long, cercana.farmacia.schema_name);
           this.showRoute = true;
 
           const startLat = this.userLocation!.latitude;
@@ -109,36 +141,36 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
           const endLat = cercana.farmacia.geo_lat;
           const endLng = cercana.farmacia.geo_long;
 
-          this.getWalkingRoute(startLat, startLng, endLat, endLng);
-          this.getCarRoute(startLat, startLng, endLat, endLng);
-          this.getBikeRoute(startLat, startLng, endLat, endLng);
+          this.getWalkingRoute(startLat, startLng, endLat, endLng, 0);
+          this.getCarRoute(startLat, startLng, endLat, endLng, 0);
+          this.getBikeRoute(startLat, startLng, endLat, endLng, 0);
         });
     }
   }
 
 
-  public getWalkingRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
+  public getWalkingRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getWalkingRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, 'Ruta a pie');
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta a pie ${index + 1}`);
         this.showRouteOnMap(routeData, 'green', popupText, this.walkingRouteLayer);
         this.showRouteWalking = true;
       });
   }
 
-  public getCarRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
+  public getCarRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getCarRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, 'Ruta en coche');
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta en coche ${index + 1}`);
         this.showRouteOnMap(routeData, 'blue', popupText, this.carRouteLayer);
         this.showRouteCar = true;
       });
   }
 
-  public getBikeRoute(startLat: number, startLng: number, endLat: number, endLng: number): void {
+  public getBikeRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getBikeRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, 'Ruta en bicicleta');
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta en bicicleta ${index + 1}`);
         this.showRouteOnMap(routeData, 'purple', popupText, this.bikeRouteLayer);
         this.showRouteBike = true;
       });
@@ -166,7 +198,9 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     durationString += `${seconds} segundo${seconds !== 1 ? 's' : ''}`;
 
-    return `${routeType}<br>Distancia: ${distance.toFixed(2)} m<br>Duración: ${durationString}`;
+    const distanceString = distance >= 1000 ? `${(distance / 1000).toFixed(2)} km` : `${distance.toFixed(2)} m`;
+
+    return `${routeType}<br>Distancia: ${distanceString}<br>Duración: ${durationString}`;
   }
 
   private showRouteOnMap(routeData: RouteResponse, color: string, popupText: string, layer: L.Polyline | undefined): void {
@@ -232,7 +266,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private addFarmaciaMarker(lat: number, lng: number, name: string): void {
+  private addFarmaciaMarker(lat: number, lng: number, name: string, more?: boolean): L.Marker {
     const blueIcon = L.icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
       shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
@@ -241,10 +275,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       popupAnchor: [1, -34],
       shadowSize: [41, 41]
     });
-    if (this.farmaciaMarker) {
-      this.map?.removeLayer(this.farmaciaMarker);
-    }
-    this.farmaciaMarker = L.marker([lat, lng], { icon: blueIcon }).addTo(this.map!).bindPopup(name);
+    const marker = L.marker([lat, lng], { icon: blueIcon }).addTo(this.map!).bindPopup(name);
+    return marker;
   }
 
   private clearRouteLayers(): void {
