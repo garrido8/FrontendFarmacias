@@ -1,5 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { FarmaciasService } from './services/farmacias.service';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
