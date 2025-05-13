@@ -8,7 +8,7 @@ import { RutasService } from '../../services/rutas.service';
   selector: 'app-mapa',
   standalone: false,
   templateUrl: './mapa.component.html',
-  styleUrls: ['./mapa.component.css']
+  styleUrls: ['./mapa.component.css'],
 })
 export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   private map: L.Map | undefined;
@@ -24,6 +24,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public showRouteCar: boolean = false;
   public showRouteBike: boolean = false;
   public showRouteWalking: boolean = false;
+  public radio: number = 2;
+
 
   constructor() { }
 
@@ -102,10 +104,12 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
           this.clearRouteLayers();
           this.farmaciaMarkers.forEach(marker => this.map?.removeLayer(marker));
           this.farmaciaMarkers = [];
+          let bounds = L.latLngBounds([]);
           farmacias.forEach((cercana, index) => {
             // Add a marker for each pharmacy
             const marker = this.addFarmaciaMarker(cercana.geo_lat, cercana.geo_long, cercana.schema_name);
             this.farmaciaMarkers.push(marker);
+            bounds.extend([cercana.geo_lat, cercana.geo_long]);
 
             // Attach a click event to the marker to display routes
             marker.on('click', () => {
@@ -121,7 +125,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
             });
             this.map?.addLayer(marker);
           });
-          this.map!.setView([this.userLocation!.latitude, this.userLocation!.longitude], 16);
+          bounds.extend([this.userLocation!.latitude, this.userLocation!.longitude]);
+          this.map!.fitBounds(bounds, { padding: [50, 50] });
         });
     }
   }
@@ -151,11 +156,45 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  public buscarFarmaciasPorRadio(radio: number): void {
+    if (this.userLocation && this.map) {
+      this.farmaciasService.getFarmaciasPorRadio(this.userLocation.latitude, this.userLocation.longitude, radio)
+        .subscribe((farmacias) => {
+          this.clearRouteLayers();
+          this.farmaciaMarkers.forEach(marker => this.map?.removeLayer(marker));
+          this.farmaciaMarkers = [];
+          let bounds = L.latLngBounds([]);
+          farmacias.forEach((cercana, index) => {
+            // Add a marker for each pharmacy
+            const marker = this.addFarmaciaMarker(cercana.geo_lat, cercana.geo_long, cercana.schema_name);
+            this.farmaciaMarkers.push(marker);
+            bounds.extend([cercana.geo_lat, cercana.geo_long]);
+
+            // Attach a click event to the marker to display routes
+            marker.on('click', () => {
+              this.clearRouteLayers();
+              this.showRoute = true;
+              const startLat = this.userLocation!.latitude;
+              const startLng = this.userLocation!.longitude;
+              const endLat = cercana.geo_lat;
+              const endLng = cercana.geo_long;
+              this.getWalkingRoute(startLat, startLng, endLat, endLng, index);
+              this.getCarRoute(startLat, startLng, endLat, endLng, index);
+              this.getBikeRoute(startLat, startLng, endLat, endLng, index);
+            });
+            this.map?.addLayer(marker);
+          });
+          bounds.extend([this.userLocation!.latitude, this.userLocation!.longitude]);
+          this.map!.fitBounds(bounds, { padding: [50, 50] });
+        });
+    }
+  }
+
 
   public getWalkingRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getWalkingRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta a pie`);
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta a pie ${index + 1}`);
         this.showRouteOnMap(routeData, 'green', popupText, this.walkingRouteLayer);
         this.showRouteWalking = true;
       });
@@ -164,7 +203,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getCarRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getCarRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta en coche`);
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta en coche ${index + 1}`);
         this.showRouteOnMap(routeData, 'blue', popupText, this.carRouteLayer);
         this.showRouteCar = true;
       });
@@ -173,7 +212,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getBikeRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getBikeRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta en bicicleta`);
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta en bicicleta ${index + 1}`);
         this.showRouteOnMap(routeData, 'purple', popupText, this.bikeRouteLayer);
         this.showRouteBike = true;
       });
