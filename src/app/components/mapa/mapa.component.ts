@@ -4,6 +4,10 @@ import { FarmaciasService } from '../../services/farmacias.service';
 import { RouteResponse } from '../../interfaces/ruta.interface';
 import { RutasService } from '../../services/rutas.service';
 
+interface RouteInfo {
+  formattedText: string;
+}
+
 @Component({
   selector: 'app-mapa',
   standalone: false,
@@ -16,6 +20,9 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   private userLocation: { latitude: number; longitude: number } | undefined;
   private farmaciasService = inject(FarmaciasService);
   private routingService = inject(RutasService);
+  public walkingRouteInfo: RouteInfo | undefined;
+  public carRouteInfo: RouteInfo | undefined;
+  public bikeRouteInfo: RouteInfo | undefined;
   public walkingRouteLayer: L.Polyline | undefined;
   public carRouteLayer: L.Polyline | undefined;
   public bikeRouteLayer: L.Polyline | undefined;
@@ -106,12 +113,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
           this.farmaciaMarkers = [];
           let bounds = L.latLngBounds([]);
           farmacias.forEach((cercana, index) => {
-            // Add a marker for each pharmacy
             const marker = this.addFarmaciaMarker(cercana.geo_lat, cercana.geo_long, cercana.schema_name);
             this.farmaciaMarkers.push(marker);
             bounds.extend([cercana.geo_lat, cercana.geo_long]);
 
-            // Attach a click event to the marker to display routes
             marker.on('click', () => {
               this.clearRouteLayers();
               this.showRoute = true;
@@ -135,7 +140,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.userLocation && this.map) {
       this.farmaciasService.getFarmaciaMasCercana(this.userLocation.latitude, this.userLocation.longitude)
         .subscribe((farmacia) => {
-          console.log(farmacia);
           this.map!.setView([farmacia.geo_lat, farmacia.geo_long], 16);
           this.clearRouteLayers();
           this.farmaciaMarkers.forEach(marker => this.map?.removeLayer(marker));
@@ -165,12 +169,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
           this.farmaciaMarkers = [];
           let bounds = L.latLngBounds([]);
           farmacias.forEach((cercana, index) => {
-            // Add a marker for each pharmacy
             const marker = this.addFarmaciaMarker(cercana.geo_lat, cercana.geo_long, cercana.schema_name);
             this.farmaciaMarkers.push(marker);
             bounds.extend([cercana.geo_lat, cercana.geo_long]);
 
-            // Attach a click event to the marker to display routes
             marker.on('click', () => {
               this.clearRouteLayers();
               this.showRoute = true;
@@ -194,8 +196,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getWalkingRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getWalkingRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta a pie`);
-        this.showRouteOnMap(routeData, 'green', popupText, this.walkingRouteLayer);
+        this.walkingRouteInfo = this.formatRouteInfo(routeData);
+        this.showRouteOnMap(routeData, 'green', this.walkingRouteLayer);
         this.showRouteWalking = true;
       });
   }
@@ -203,8 +205,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getCarRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getCarRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta en coche`);
-        this.showRouteOnMap(routeData, 'blue', popupText, this.carRouteLayer);
+        this.carRouteInfo = this.formatRouteInfo(routeData);
+        this.showRouteOnMap(routeData, 'blue', this.carRouteLayer);
         this.showRouteCar = true;
       });
   }
@@ -212,13 +214,13 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getBikeRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getBikeRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta en bicicleta`);
-        this.showRouteOnMap(routeData, 'purple', popupText, this.bikeRouteLayer);
+        this.bikeRouteInfo = this.formatRouteInfo(routeData);
+        this.showRouteOnMap(routeData, 'purple', this.bikeRouteLayer);
         this.showRouteBike = true;
       });
   }
 
-  private formatDurationAndDistance(routeData: RouteResponse, routeType: string): string {
+  private formatRouteInfo(routeData: RouteResponse): RouteInfo {
     let distance = 0;
     let duration = 0;
 
@@ -242,10 +244,11 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const distanceString = distance >= 1000 ? `${(distance / 1000).toFixed(2)} km` : `${distance.toFixed(2)} m`;
 
-    return `${routeType}<br>Distancia: ${distanceString}<br>Duración: ${durationString}`;
+    const formattedText = `Distancia: ${distanceString}<br>Duración: ${durationString}`;
+    return { formattedText };
   }
 
-  private showRouteOnMap(routeData: RouteResponse, color: string, popupText: string, layer: L.Polyline | undefined): void {
+  private showRouteOnMap(routeData: RouteResponse, color: string, layer: L.Polyline | undefined): void {
     if (this.map && routeData.features && routeData.features.length > 0) {
       const geometry = routeData.features[0].geometry;
       if (geometry && geometry.coordinates && geometry.coordinates.length > 0) {
@@ -255,19 +258,23 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
             if (Array.isArray(coord) && coord.length === 2 && typeof coord[0] === 'number' && typeof coord[1] === 'number') {
               return [coord[1], coord[0]] as L.LatLngExpression;
             } else {
-              console.warn(`Coordenada inválida (${popupText}):`, coord);
+              console.warn(`Coordenada inválida (Ruta):`, coord);
               return null;
             }
           }).filter(coord => coord !== null) as L.LatLngExpression[];
 
           if (latlngs.length > 0) {
-            // Create a new polyline
-            const polyline = L.polyline(latlngs, { color: color }).bindPopup(popupText);
-
-            // Add the polyline to the map
+            let popupContent = '';
+            if (color === 'green' && this.walkingRouteInfo) {
+              popupContent = this.walkingRouteInfo.formattedText;
+            } else if (color === 'blue' && this.carRouteInfo) {
+              popupContent = this.carRouteInfo.formattedText;
+            } else if (color === 'purple' && this.bikeRouteInfo) {
+              popupContent = this.bikeRouteInfo.formattedText;
+            }
+            const polyline = L.polyline(latlngs, { color: color }).bindPopup(popupContent);
             polyline.addTo(this.map);
 
-            // Store the polyline in the appropriate layer variable.
             if (color === 'green') {
               this.walkingRouteLayer = polyline;
             } else if (color === 'blue') {
@@ -276,33 +283,36 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
               this.bikeRouteLayer = polyline;
             }
           } else {
-            console.warn(`No valid coordinates to draw route (${popupText})`);
+            console.warn(`No hay coordenadas válidas para dibujar la ruta.`);
           }
         } else {
-          console.warn(`Unexpected coordinate format (${popupText})`);
+          console.warn(`Formato de coordenadas inesperado.`);
         }
       } else {
-        console.warn(`No coordinate information in response (${popupText})`);
+        console.warn(`No hay información de coordenadas en la respuesta de la ruta.`);
       }
     } else {
-      console.warn(`No route features in response (${popupText})`);
+      console.warn(`No hay características de ruta en la respuesta.`);
     }
   }
 
   public focusWalkingRoute(): void {
-    this.centerOnRoute(this.walkingRouteLayer);
+    this.centerOnRoute(this.walkingRouteLayer, this.walkingRouteInfo?.formattedText);
   }
 
   public focusCarRoute(): void {
-    this.centerOnRoute(this.carRouteLayer);
+    this.centerOnRoute(this.carRouteLayer, this.carRouteInfo?.formattedText);
   }
 
   public focusBikeRoute(): void {
-    this.centerOnRoute(this.bikeRouteLayer);
+    this.centerOnRoute(this.bikeRouteLayer, this.bikeRouteInfo?.formattedText);
   }
 
-  private centerOnRoute(layer: L.Polyline | undefined): void {
-    if (this.map && layer) {
+  private centerOnRoute(layer: L.Polyline | undefined, popupContent: string | undefined): void {
+    if (this.map && layer && popupContent) {
+      this.map.fitBounds(layer.getBounds(), { padding: [80, 80] });
+      layer.setPopupContent(popupContent).openPopup();
+    } else if (this.map && layer) {
       this.map.fitBounds(layer.getBounds(), { padding: [80, 80] });
       layer.openPopup();
     }
@@ -329,6 +339,9 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       this.walkingRouteLayer = undefined;
       this.carRouteLayer = undefined;
       this.bikeRouteLayer = undefined;
+      this.walkingRouteInfo = undefined;
+      this.carRouteInfo = undefined;
+      this.bikeRouteInfo = undefined;
     }
   }
 }

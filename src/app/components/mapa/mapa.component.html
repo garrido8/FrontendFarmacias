@@ -1,28 +1,32 @@
 <div class="content">
   <div class="top-part">
-    <div id="map">
-      <div class="routes-info">
-        @if (showRoute) {
-          @if (showRouteWalking && walkingRouteLayer) {
-            <div class="route walk" (click)="focusWalkingRoute()">
-              Ruta a pie
-            </div>
-          }
+    <div id="map"></div>
 
-          @if (showRouteCar && carRouteLayer) {
-            <div class="route car" (click)="focusCarRoute()">
-              Ruta en coche
-            </div>
-          }
-
-          @if (showRouteBike && bikeRouteLayer) {
-            <div class="route bike" (click)="focusBikeRoute()">
-              Ruta en bicicleta
-            </div>
-          }
-        }
+<div class="routes-info">
+  @if (showRoute) {
+    @if (showRouteWalking && walkingRouteInfo?.formattedText) {
+      <div class="route walk" (click)="focusWalkingRoute()">
+        Ruta a pie
+        <div style="font-size: 0.8em; color: #555;" [innerHTML]="walkingRouteInfo!.formattedText"></div>
       </div>
-    </div>
+    }
+
+    @if (showRouteCar && carRouteInfo?.formattedText) {
+      <div class="route car" (click)="focusCarRoute()">
+        Ruta en coche
+        <div style="font-size: 0.8em; color: #555;" [innerHTML]="carRouteInfo!.formattedText"></div>
+      </div>
+    }
+
+    @if (showRouteBike && bikeRouteInfo?.formattedText) {
+      <div class="route bike" (click)="focusBikeRoute()">
+        Ruta en bicicleta
+        <div style="font-size: 0.8em; color: #555;" [innerHTML]="bikeRouteInfo!.formattedText"></div>
+      </div>
+    }
+  }
+</div>
+
   </div>
 
   <div class="controls">

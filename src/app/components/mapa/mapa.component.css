@@ -4,55 +4,148 @@
   position: relative; /* Make the map a positioning context */
   border-radius: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  overflow: hidden; /* clip the routes-info if it overflows */
-}
-
-.routes-info {
-  max-width: 300px;
-  padding: 10px;
-  border-bottom-left-radius: 20px;
-  z-index: 1000; /* Ensure routes-info is above map tiles */
-  background-color: white;
-  position: absolute;
-  top: 0; /* Position at the top */
-  right: 0; /* Position at the right */
-}
-
-
-.routes-info .route{
-  cursor: pointer; /*Make the route clickable*/
-  z-index: 1000; /* Ensure routes-info is above map tiles */
+  overflow: hidden; /* clip the map content */
 }
 
 .top-part {
-    display: flex;
-    justify-content: center;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px; /* Add some space below the map */
 }
 
+.routes-info {
+  width: 300px; /* Fixed width for the sidebar */
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+  backdrop-filter: blur(10px); /* Add a blur effect for better readability over the map */
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.routes-info .route {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.routes-info .route:hover {
+  background-color: #f0f0f0;
+}
+
+.routes-info .route::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.routes-info .route.walk::before {
+  background-color: green;
+}
+
+.routes-info .route.car::before {
+  background-color: blue;
+}
+
+.routes-info .route.bike::before {
+  background-color: purple;
+}
+
+.controls {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center; /* Center items horizontally */
+}
 
 .buttons {
   display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
+  gap: 15px;
 }
 
 .buttons button {
-  padding: 10px 20px;
+  padding: 12px 24px;
   font-size: 1em;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   background-color: #007bff;
   color: white;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
 }
 
 .buttons button:hover {
   background-color: #0056b3;
+  box-shadow: 0 3px 4px rgba(0, 0, 0, 0.15);
+}
+
+.buttons button:active {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px);
 }
 
 .buttons button:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 300px; /* Adjust width as needed */
+}
+
+.slider-container input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ddd;
+  border-radius: 5px;
+  height: 10px;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-container input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: none;
+}
+
+.slider-container p {
+  font-size: 0.9em;
+  color: #555;
+}
+
+.legend {
+  margin-top: 15px;
+  /* Add legend styling if needed */
 }
