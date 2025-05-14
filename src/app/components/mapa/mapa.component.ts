@@ -134,20 +134,20 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public buscarFarmaciaMasCercana(): void {
     if (this.userLocation && this.map) {
       this.farmaciasService.getFarmaciaMasCercana(this.userLocation.latitude, this.userLocation.longitude)
-        .subscribe((cercana) => {
-          console.log(cercana);
-          this.map!.setView([cercana.farmacia.geo_lat, cercana.farmacia.geo_long], 16);
+        .subscribe((farmacia) => {
+          console.log(farmacia);
+          this.map!.setView([farmacia.geo_lat, farmacia.geo_long], 16);
           this.clearRouteLayers();
           this.farmaciaMarkers.forEach(marker => this.map?.removeLayer(marker));
           this.farmaciaMarkers = [];
-          const marker = this.addFarmaciaMarker(cercana.farmacia.geo_lat, cercana.farmacia.geo_long, cercana.farmacia.schema_name);
+          const marker = this.addFarmaciaMarker(farmacia.geo_lat, farmacia.geo_long, farmacia.schema_name);
           this.farmaciaMarkers.push(marker);
           this.showRoute = true;
 
           const startLat = this.userLocation!.latitude;
           const startLng = this.userLocation!.longitude;
-          const endLat = cercana.farmacia.geo_lat;
-          const endLng = cercana.farmacia.geo_long;
+          const endLat = farmacia.geo_lat;
+          const endLng = farmacia.geo_long;
 
           this.getWalkingRoute(startLat, startLng, endLat, endLng, 0);
           this.getCarRoute(startLat, startLng, endLat, endLng, 0);
@@ -194,7 +194,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getWalkingRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getWalkingRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta a pie ${index + 1}`);
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta a pie`);
         this.showRouteOnMap(routeData, 'green', popupText, this.walkingRouteLayer);
         this.showRouteWalking = true;
       });
@@ -203,7 +203,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getCarRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getCarRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta en coche ${index + 1}`);
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta en coche`);
         this.showRouteOnMap(routeData, 'blue', popupText, this.carRouteLayer);
         this.showRouteCar = true;
       });
@@ -212,7 +212,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public getBikeRoute(startLat: number, startLng: number, endLat: number, endLng: number, index: number): void {
     this.routingService.getBikeRoute(startLat, startLng, endLat, endLng)
       .subscribe(routeData => {
-        const popupText = this.formatDurationAndDistance(routeData, `Ruta en bicicleta ${index + 1}`);
+        const popupText = this.formatDurationAndDistance(routeData, `Ruta en bicicleta`);
         this.showRouteOnMap(routeData, 'purple', popupText, this.bikeRouteLayer);
         this.showRouteBike = true;
       });

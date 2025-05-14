@@ -16,8 +16,8 @@ export class FarmaciasService {
     return this.http.get<Farmacia[]>(`${this.farmaciasUrl}/farmacias`);
   }
 
-  public getFarmaciaMasCercana( lat: number, lon: number ): Observable<Cercana> {
-    return this.http.get<Cercana>(`${this.farmaciasUrl}/farmacia-mas-cercana?lat=${lat}&long=${lon}`);
+  public getFarmaciaMasCercana( lat: number, lon: number ): Observable<Farmacia> {
+    return this.http.get<Farmacia>(`${this.farmaciasUrl}/farmacia-mas-cercana?lat=${lat}&long=${lon}`);
   }
 
   public getFarmaciasMasCercanas( lat: number, lon: number ): Observable<Farmacia[]> {
